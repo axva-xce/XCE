@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XCE Client</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">XCE</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#versions">Versions</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#Expressions">Expressions</a>
+            </div>
+            <div class="theme-selector">
+                <button class="theme-btn active" data-theme="pink">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="theme-btn" data-theme="green">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="theme-btn" data-theme="blue">
+                    <i class="fas fa-circle"></i>
+                </button>
+            </div>
+            <button class="cta-button">Get Started</button>
+            <button class="hamburger-menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="floating-pieces">
+            <!-- Pieces will be added dynamically by JavaScript -->
+        </div>
+        <div class="hero-particles"></div>
+        <div class="hero-content">
+            <h1 class="glow-text">XCE 1.0</h1>
+            <p class="subtitle">The best chess tool, everything you need, all in one place.</p>
+            <div class="cta-buttons">
+                <button class="primary-button">Download XCE</button>
+                <button class="secondary-button">Learn More</button>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chess"></i></div>
+                <h3>Real-time Analysis</h3>
+                <p>Stockfish 17 Binary integration with real-time position evaluation and move suggestions</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-palette"></i></div>
+                <h3>Customizable Configurations</h3>
+                <p>Unlock deep customization using expressions and variables for ultimate control.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-user-shield"></i></div>
+                <h3>Account Generation</h3>
+                <p>Generate unique usernames, emails, and passwords</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                <h3>Performance</h3>
+                <p>Lightweight and optimized for speed with minimal resource usage</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="versions" class="versions">
+        <h2>XCE Tiers</h2>
+        <div class="table-container">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>
+                            <div class="version-header-content">
+                                <div class="version-title">XCE T1</div>
+                                <div class="version-price">$0/mo</div>
+                                <p class="version-header-description">Basic real-time analysis for casual learners.</p>
+                                <button class="version-button table-button">Download</button>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="version-header-content">
+                                <div class="version-title">XCE T2</div>
+                                <div class="version-price">$2.99/mo</div>
+                                <p class="version-header-description">Move suggestions and board customization to
+                                    improve your game.</p>
+                                <button class="version-button table-button">Subscribe</button>
+                            </div>
+                        </th>
+                        <th class="featured-column">
+                            <div class="version-header-content">
+                                <div class="version-title">XCE T3</div>
+                                <div class="version-price">$4.99/mo</div>
+                                <p class="version-header-description">Full toolkit with advanced analysis and account
+                                    generation for a competitive edge.</p>
+                                <button class="version-button table-button">Subscribe</button>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-name">Game Review</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Engine Lines (PVs)</td>
+                        <td class="value-text">1</td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Eval & Depth Display</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Move Notation Formats</td>
+                        <td class="value-text">UCI</td>
+                        <td class="value-text">UCI/SAN/FAN</td>
+                        <td class="value-text">UCI/SAN/FAN</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">On-Board Arrows</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Configurable Arrow Draw Delay</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Premove Suggestion Arrows</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Coordinates Display</td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Automove</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Puzzle Solver</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Expressions for Settings</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Custom Keybinds</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Profiles</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Customization</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Account Generator</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Accounts List</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Pfp Generator</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name">Custom Titles (GM, XCE, etc.)</td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="cross"><i class="fas fa-times"></i></td>
+                        <td class="check"><i class="fas fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-name"></td>
+                        <td><button class="version-button table-button">Download</button></td>
+                        <td><button class="version-button table-button">Subscribe</button></td>
+                        <td><button class="version-button table-button">Subscribe</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="team-section">
+        <div class="team-container">
+            <div class="team-credit">
+                <span class="name">Axva</span>
+                <span class="username">axva.xce</span>
+                <span class="role">Owner Of XCE</span>
+            </div>
+            <div class="team-credit">
+                <span class="name">Ace</span>
+                <span class="username">ace0fac3s</span>
+                <span class="role">Head Dev</span>
+            </div>
+            <div class="team-credit">
+                <span class="name">Eevee</span>
+                <span class="username">exviexx0</span>
+                <span class="role">Web Dev</span>
+            </div>
+            <div class="team-credit">
+                <span class="name">Love</span>
+                <span class="username">_l0v3__</span>
+                <span class="role">Free & Lite Dev</span>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>XCE</h4>
+                <p>Enhancing your chess experience</p>
+                <p>Version 1.0</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links</h4>
+                <a href="#features">Features</a>
+                <a href="#versions">Versions</a>
+                <a href="#pricing">Pricing</a>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <div class="social-links">
+                    <a href="#" class="social-link">
+                        <i class="fab fa-discord"></i>
+                    </a>
+                    <a href="#" class="social-link">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a href="#" class="social-link">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="social-link">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                </div>
+                <p class="contact-email">support@xce.com</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 XCE. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <canvas id="interactive-particles"></canvas>
+</body>
+
+</html>
