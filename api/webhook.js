@@ -23,12 +23,12 @@ export default async function handler(req, res) {
             sig,
             process.env.TEST_STRIPE_WEBHOOK_SECRET
         );
-        console.log(`✅ Received Stripe event: ${event.type}`);
+        console.warn(`✅ Received Stripe event: ${event.type}`);
 
         const customFields = event.data.object.custom_fields || [];
         const usernameField = customFields.find(f => f.label === 'XCE Username');
         const purchasedFor = usernameField?.text;
-        console.log(`🆔 XCE Username from Checkout: ${purchasedFor}`);
+        console.warn(`🆔 XCE Username from Checkout: ${purchasedFor}`);
     } catch (err) {
         console.error(`❌ Webhook signature verification failed.`, err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
                 accounts[idx].currentPeriodEnd = sub.current_period_end;
                 accounts[idx].status = sub.status;
                 await writeAccounts(accounts);
-                console.log(`🔄 Updated subscription for ${email}:`, sub.status);
+                console.warn(`🔄 Updated subscription for ${email}:`, sub.status);
             } else {
                 console.warn(`⚠️ No account found for email ${email}`);
             }
