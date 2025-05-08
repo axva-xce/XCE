@@ -59,9 +59,8 @@ export default async function handler(req, res) {
         }
 
         if (sub) {
-            // Load your accounts array from Upstash
             const accounts = await readAccounts();
-            const idx = accounts.findIndex((a) => a.username === email);
+            const idx = accounts.findIndex((a) => a.username === purchasedFor);
 
             if (idx !== -1) {
                 // Update the record in place
