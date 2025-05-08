@@ -10,6 +10,7 @@ export async function readAccounts() {
     return raw ? JSON.parse(raw) : [];
 }
 
+
 export async function writeAccounts(accounts) {
     await redis.set('accounts', JSON.stringify(accounts));
 }
