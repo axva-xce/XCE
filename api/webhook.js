@@ -5,7 +5,7 @@ import { readAccounts, writeAccounts } from './db';
 export const config = { api: { bodyParser: false } };
 
 // Initialize Stripe with your secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.TEST_STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
     // Only accept POSTs
