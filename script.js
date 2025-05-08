@@ -51,6 +51,7 @@ document.querySelectorAll('.comparison-table .version-button').forEach(button =>
                 alert(`Thank you for your interest! This is a demo website.`);
             }
         } else {
+            // This case might not be reached if buttons are only in th
             alert(`Thank you for your interest! This is a demo website.`);
         }
     });

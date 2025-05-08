@@ -48,6 +48,10 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     -ms-overflow-style: none;
+    /* Added for sticky footer */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 ::-webkit-scrollbar {
@@ -670,6 +674,8 @@ footer {
     background-color: var(--background-light);
     padding: 4rem 2rem 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    /* Added to push footer to bottom */
+    margin-top: auto;
 }
 
 .footer-content {
@@ -871,6 +877,20 @@ textarea {
 .theme-btn:hover {
     transform: scale(1.1);
 }
+
+/* Added for the interactive particles canvas */
+#interactive-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    /* Behind most content, but above body's direct background color */
+    pointer-events: none;
+    /* Allow clicks to pass through */
+}
+
 
 @media (max-width: 768px) {
     .nav-links {
