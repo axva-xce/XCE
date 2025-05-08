@@ -43,29 +43,42 @@
     user-select: none;
 }
 
+<<<<<<< HEAD
 html {
     scrollbar-width: none;
     height: 100%;
     /* Added */
 }
 
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 body {
     background-color: var(--background-dark);
     color: var(--text-primary);
     line-height: 1.6;
     -ms-overflow-style: none;
+<<<<<<< HEAD
     display: flex;
     /* Added */
     flex-direction: column;
     /* Added */
     min-height: 100%;
     /* Ensure body takes at least full height */
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 }
 
 ::-webkit-scrollbar {
     display: none;
 }
 
+<<<<<<< HEAD
+=======
+html {
+    scrollbar-width: none;
+}
+
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 .navbar {
     position: fixed;
     top: 0;
@@ -141,7 +154,12 @@ body {
 
 .cta-button,
 .primary-button,
+<<<<<<< HEAD
 .secondary-button {
+=======
+.secondary-button,
+.version-button {
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     padding: 0.8rem 1.5rem;
     border-radius: 8px;
     border: none;
@@ -151,18 +169,35 @@ body {
     background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
     color: white;
     box-shadow: var(--accent-glow);
+<<<<<<< HEAD
     text-decoration: none;
     display: inline-block;
     text-align: center;
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 }
 
 .cta-button:hover,
 .primary-button:hover,
+<<<<<<< HEAD
 .secondary-button:hover {
+=======
+.secondary-button:hover,
+.version-button:hover {
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     transform: translateY(-2px);
     box-shadow: 0 0 30px rgba(var(--primary-color-rgb), 0.7);
 }
 
+<<<<<<< HEAD
+=======
+.secondary-button {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: var(--text-primary);
+    box-shadow: var(--accent-glow);
+}
+
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 .hero {
     min-height: 100vh;
     display: flex;
@@ -170,10 +205,15 @@ body {
     justify-content: center;
     text-align: center;
     padding: 6rem 2rem;
+<<<<<<< HEAD
     /* Increased top padding to account for fixed navbar */
     position: relative;
     overflow: hidden;
     /* flex-shrink: 0; Remove if it causes issues with footer, but usually good for hero */
+=======
+    position: relative;
+    overflow: hidden;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 }
 
 .hero::before {
@@ -285,6 +325,7 @@ body {
     justify-content: center;
 }
 
+<<<<<<< HEAD
 /* Main content sections - ensure they have some top padding if navbar is fixed */
 #features,
 #versions,
@@ -306,11 +347,19 @@ body {
 .versions {
     /* padding: 6rem 2rem; */
     /* Handled by common section padding above */
+=======
+.versions {
+    padding: 6rem 2rem;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     text-align: center;
 }
 
 .versions h2 {
+<<<<<<< HEAD
     margin-bottom: 1rem;
+=======
+    margin-bottom: 3rem;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     font-size: 2.5rem;
     width: 100%;
     text-align: center;
@@ -365,7 +414,11 @@ body {
     font-weight: 600;
     position: relative;
     padding-top: 1.5rem;
+<<<<<<< HEAD
     padding-bottom: 1.5rem;
+=======
+    padding-bottom: 1rem;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     vertical-align: top;
 }
 
@@ -384,7 +437,11 @@ body {
     align-items: center;
     justify-content: flex-start;
     height: 100%;
+<<<<<<< HEAD
     min-height: 200px;
+=======
+    min-height: 280px;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 }
 
 .version-title {
@@ -409,6 +466,10 @@ body {
     line-height: 1.4;
     font-weight: 300;
     margin-top: 0.5rem;
+<<<<<<< HEAD
+=======
+    margin-bottom: 1rem;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     padding: 0 0.5rem;
     max-width: 180px;
     margin-left: auto;
@@ -417,6 +478,18 @@ body {
     flex-grow: 1;
 }
 
+<<<<<<< HEAD
+=======
+.table-button {
+    padding: 0.7rem 1.3rem;
+    font-size: 0.9rem;
+    width: auto;
+    max-width: 150px;
+    display: inline-block;
+    margin-top: auto;
+}
+
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 .featured-column {
     background-color: rgba(var(--primary-color-rgb), 0.12) !important;
 }
@@ -465,8 +538,12 @@ body {
 }
 
 .features {
+<<<<<<< HEAD
     /* padding: 6rem 2rem; */
     /* Handled by common section padding above */
+=======
+    padding: 6rem 2rem;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     background-color: var(--background-light);
 }
 
@@ -635,8 +712,12 @@ body {
 }
 
 .team-section {
+<<<<<<< HEAD
     /* padding: 4rem 2rem; */
     /* Handled by common section padding above */
+=======
+    padding: 4rem 2rem;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     background-color: var(--background-dark);
     border-top: 1px solid rgba(var(--primary-color-rgb), 0.1);
 }
@@ -686,10 +767,13 @@ footer {
     background-color: var(--background-light);
     padding: 4rem 2rem 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+<<<<<<< HEAD
     margin-top: auto;
     /* Pushes footer to the bottom */
     width: 100%;
     /* Ensure footer takes full width in flex context */
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 }
 
 .footer-content {
@@ -794,7 +878,10 @@ footer {
     height: 100%;
     overflow: hidden;
     z-index: -1;
+<<<<<<< HEAD
     /* Ensure it's behind hero content but above hero::before */
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 }
 
 .floating-pieces i {
@@ -893,6 +980,7 @@ textarea {
     transform: scale(1.1);
 }
 
+<<<<<<< HEAD
 /* Styling for the full-page interactive canvas */
 #interactive-particles {
     position: fixed;
@@ -907,6 +995,8 @@ textarea {
 }
 
 
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 @media (max-width: 768px) {
     .nav-links {
         display: none;
@@ -939,6 +1029,7 @@ textarea {
         justify-content: center;
     }
 
+<<<<<<< HEAD
     .nav-container .cta-button {
         display: none;
     }
@@ -951,6 +1042,8 @@ textarea {
     }
 
 
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     .hamburger-menu {
         display: block;
     }
@@ -978,7 +1071,11 @@ textarea {
     }
 
     .version-header-content {
+<<<<<<< HEAD
         min-height: 180px;
+=======
+        min-height: 240px;
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
     }
 
     .version-title {
@@ -995,6 +1092,18 @@ textarea {
         min-height: 40px;
     }
 
+<<<<<<< HEAD
+=======
+    .table-button {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+    }
+
+    .version-popular-badge {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+    }
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 
     .feature-grid {
         grid-template-columns: 1fr;
@@ -1012,6 +1121,7 @@ textarea {
     .team-container {
         gap: 2rem;
     }
+<<<<<<< HEAD
 
     #features,
     #versions,
@@ -1023,4 +1133,6 @@ textarea {
     .hero {
         padding-top: 6rem;
     }
+=======
+>>>>>>> 80e0316312feba4b4f5d2b39c0a1158b7e0c8b43
 }
