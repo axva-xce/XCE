@@ -24,6 +24,11 @@ export default async function handler(req, res) {
             process.env.TEST_STRIPE_WEBHOOK_SECRET
         );
         console.log(`✅ Received Stripe event: ${event.type}`);
+
+        const customFields = event.data.object.custom_fields || [];
+        const usernameField = customFields.find(f => f.label === 'XCE Username');
+        const purchasedFor = usernameField?.text;
+        console.log(`🆔 XCE Username from Checkout: ${purchasedFor}`);
     } catch (err) {
         console.error(`❌ Webhook signature verification failed.`, err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
