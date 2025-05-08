@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@upstash/redis": "^1.34.9",
 		"bcrypt": "^5.1.1",
+		"bcryptjs": "^3.0.2",
 		"jsonwebtoken": "^9.0.2",
 		"micro": "^10.0.1",
 		"stripe": "^18.1.0"
