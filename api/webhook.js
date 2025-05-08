@@ -25,10 +25,17 @@ export default async function handler(req, res) {
         );
         console.warn(`✅ Received Stripe event: ${event.type}`);
 
-        const customFields = event.data.object.custom_fields || [];
-        const usernameField = customFields.find(f => f.label === 'XCE Username');
-        const purchasedFor = usernameField?.text;
-        console.warn(`🆔 XCE Username from Checkout: ${purchasedFor}`);
+        if (event.type === 'checkout.session.completed') {
+            // DEBUG: dump the entire session object so we can see all fields
+            console.warn('🗒️ Session Object:', JSON.stringify(event.data.object, null, 2));
+
+            // Now extract the custom field
+            const customFields = event.data.object.custom_fields || [];
+            const usernameField = customFields.find(f => f.label?.text === 'XCE Username');
+            const purchasedFor = usernameField?.text;
+            console.warn(`🆔 XCE Username from Checkout: ${purchasedFor}`);
+        }
+
     } catch (err) {
         console.error(`❌ Webhook signature verification failed.`, err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
