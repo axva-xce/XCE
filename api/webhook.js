@@ -26,13 +26,9 @@ export default async function handler(req, res) {
         console.warn(`✅ Received Stripe event: ${event.type}`);
 
         if (event.type === 'checkout.session.completed') {
-            // DEBUG: dump the entire session object so we can see all fields
-            console.warn('🗒️ Session Object:', JSON.stringify(event.data.object, null, 2));
-
-            // Now extract the custom field
             const customFields = event.data.object.custom_fields || [];
-            const usernameField = customFields.find(f => f.label?.text === 'XCE Username');
-            const purchasedFor = usernameField?.text;
+            const usernameField = customFields.find(f => f.key === 'xceusername');
+            const purchasedFor = usernameField?.text?.value;
             console.warn(`🆔 XCE Username from Checkout: ${purchasedFor}`);
         }
 
