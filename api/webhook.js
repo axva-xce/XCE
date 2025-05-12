@@ -1,19 +1,19 @@
+// /api/webhook.js
+
 import { buffer } from 'micro';
 import Stripe from 'stripe';
-import { readAccounts, writeAccounts } from './db';
+// ← point at your helper, not db.js
+import { upsertAccount } from './account.js';
 
 export const config = { api: { bodyParser: false } };
 
-// Initialize Stripe with your secret key
+// Initialize Stripe
 const stripe = new Stripe(process.env.TEST_STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
-    // Only accept POSTs
-    if (req.method !== 'POST') {
-        return res.status(405).end();
-    }
+    if (req.method !== 'POST') return res.status(405).end();
 
-    // Grab the raw body for signature verification
+    // Grab raw body to verify signature
     const buf = await buffer(req);
     let event;
     try {
@@ -23,60 +23,53 @@ export default async function handler(req, res) {
             sig,
             process.env.TEST_STRIPE_WEBHOOK_SECRET
         );
-        console.warn(`✅ Received Stripe event: ${event.type}`);
-
-        if (event.type === 'checkout.session.completed') {
-            const customFields = event.data.object.custom_fields || [];
-            const usernameField = customFields.find(f => f.key === 'xceusername');
-            const purchasedFor = usernameField?.text?.value;
-            console.warn(`🆔 XCE Username from Checkout: ${purchasedFor}`);
-        }
-
+        console.warn(`✅ Stripe event: ${event.type}`);
     } catch (err) {
-        console.error(`❌ Webhook signature verification failed.`, err.message);
+        console.error('❌ Webhook signature failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Extract the customer email
-    const email = event.data.object.customer_details?.email;
-    if (email) {
-        let sub;
-        const obj = event.data.object;
+    // === extract username ===
+    let username =
+        // 1) metadata on subscription (if you set it)
+        event.data.object.metadata?.xceusername ||
+        // 2) metadata on session/customer
+        event.data.object.metadata?.xceusername ||
+        event.data.object.customer_details?.metadata?.xceusername ||
+        // 3) fallback for custom_fields on checkout.session.completed
+        (event.type === 'checkout.session.completed'
+            ? (event.data.object.custom_fields || [])
+                .find(f => f.key === 'xceusername')
+                ?.text?.value
+            : null);
 
-        // For initial checkout or successful invoice payment, fetch the full subscription
-        if (
-            event.type === 'checkout.session.completed' ||
-            event.type === 'invoice.payment_succeeded'
-        ) {
-            sub = await stripe.subscriptions.retrieve(obj.subscription);
-        }
-        // For updates and cancellations, the subscription object is in the payload
-        else if (
-            event.type === 'customer.subscription.updated' ||
-            event.type === 'customer.subscription.deleted'
-        ) {
-            sub = obj;
-        }
+    console.warn('🆔 XCE username:', username || '<none>');
 
-        if (sub) {
-            const accounts = await readAccounts();
-            const idx = accounts.findIndex((a) => a.username === purchasedFor);
-
-            if (idx !== -1) {
-                // Update the record in place
-                accounts[idx].stripeSubscriptionId = sub.id;
-                accounts[idx].currentPeriodEnd = sub.current_period_end;
-                accounts[idx].status = sub.status;
-                await writeAccounts(accounts);
-                console.warn(`🔄 Updated subscription for ${email}:`, sub.status);
-            } else {
-                console.warn(`⚠️ No account found for email ${email}`);
-            }
-        }
-    } else {
-        console.warn('⚠️ Event did not include customer_details.email');
+    // === pull the Subscription object ===
+    let sub = null;
+    const obj = event.data.object;
+    if (event.type === 'checkout.session.completed' || event.type === 'invoice.payment_succeeded') {
+        sub = await stripe.subscriptions.retrieve(obj.subscription);
+    } else if (
+        event.type === 'customer.subscription.updated' ||
+        event.type === 'customer.subscription.deleted'
+    ) {
+        sub = obj;
     }
 
-    // Acknowledge receipt
+    // === upsert in Upstash ===
+    if (sub && username) {
+        try {
+            const acct = await upsertAccount({ username, sub });
+            console.warn(`🔄 Upserted ${acct.username} → tier=${acct.tier}, status=${acct.status}`);
+        } catch (err) {
+            console.error('❌ upsertAccount error:', err);
+            return res.status(500).end();
+        }
+    } else {
+        console.warn('⚠️ Missing subscription or username, skipping upsert');
+    }
+
+    // Acknowledge
     res.json({ received: true });
 }
