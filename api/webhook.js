@@ -2,7 +2,7 @@
 
 import { buffer } from 'micro';
 import Stripe from 'stripe';
-import { upsertAccount } from './account.js';
+import { upsertAccount } from './account.js'; // you placed account.js in the same folder
 
 export const config = { api: { bodyParser: false } };
 const stripe = new Stripe(process.env.TEST_STRIPE_SECRET_KEY);
@@ -20,29 +20,32 @@ export default async function handler(req, res) {
             sig,
             process.env.TEST_STRIPE_WEBHOOK_SECRET
         );
+        console.warn(`✅ Stripe event: ${event.type}`);
     } catch (err) {
         console.error('❌ Webhook signature failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-    console.warn(`✅ Stripe event: ${event.type}`);
+
+    const obj = event.data.object;
 
     // 2. Extract XCE username
-    const obj = event.data.object;
+    // —from metadata if you added it to subscription_data
+    // —otherwise fallback to custom_fields on checkout.session.completed
     const username =
-        // subscription metadata (if you add it, see below)
         obj.metadata?.xceusername ||
-        // fallback: checkout-session custom_fields
         (event.type === 'checkout.session.completed'
-            ? (obj.custom_fields || []).find(f => f.key === 'xceusername')?.text?.value
+            ? (obj.custom_fields || [])
+                .find(f => f.key === 'xceusername')
+                ?.text?.value
             : null);
 
     console.warn('🆔 XCE username:', username || '<none>');
 
-    // 3. Determine subscription object
+    // 3. Pull the Subscription object if relevant
     let sub = null;
 
     if (event.type === 'checkout.session.completed') {
-        // session → subscription ID on the session object
+        // checkout.session.completed: session.subscription is the ID
         if (obj.subscription) {
             sub = await stripe.subscriptions.retrieve(obj.subscription);
         } else {
@@ -50,7 +53,7 @@ export default async function handler(req, res) {
         }
 
     } else if (event.type === 'invoice.payment_succeeded') {
-        // invoice → subscription ID on the invoice object
+        // invoice.payment_succeeded: invoice.subscription is the ID
         if (obj.subscription) {
             sub = await stripe.subscriptions.retrieve(obj.subscription);
         } else {
@@ -61,11 +64,11 @@ export default async function handler(req, res) {
         event.type === 'customer.subscription.updated' ||
         event.type === 'customer.subscription.deleted'
     ) {
-        // subscription events contain the full subscription already
+        // these events already include the full Subscription object
         sub = obj;
     }
 
-    // 4. Upsert into Upstash if we have both
+    // 4. Upsert into Upstash if we have both sub + username
     if (sub && username) {
         try {
             const acct = await upsertAccount({ username, sub });
@@ -74,10 +77,11 @@ export default async function handler(req, res) {
             console.error('❌ upsertAccount error:', err);
             return res.status(500).end();
         }
+
     } else if (sub && !username) {
         console.warn('⚠️ Skipping upsert: have subscription but no username');
     }
 
-    // 5. Reply 200
+    // 5. Return 200 to Stripe
     res.json({ received: true });
 }
