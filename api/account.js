@@ -1,32 +1,25 @@
-// api/account.js
-
 import { readAccounts, writeAccounts } from './db.js';
-
-/**
- * Create or update the account, and store when the current paid period ends.
- */
 export async function upsertAccount({ username, sub }) {
     if (!username) throw new Error('No username passed to upsertAccount');
-
     const accounts = await readAccounts();
     let acct = accounts.find(a => a.username === username);
-
     if (!acct) {
-        // New user, free tier default:
         acct = {
             username,
-            passwordHash: '',       // no password yet
-            tier: 'T1',             // free tier
+            passwordHash: '',
+            tier: 'T1',
             stripeSubscriptionId: null,
-            currentPeriodEnd: 0     // Unix timestamp seconds
+            currentPeriodEnd: 0
         };
         accounts.push(acct);
     }
 
-    // Update with subscription info:
+
+    const item = sub.items?.data?.[0];
     acct.stripeSubscriptionId = sub.id;
-    acct.currentPeriodEnd = sub.current_period_end;
-    acct.tier = tierFromPrice(sub.items.data[0].price);
+    acct.currentPeriodEnd =
+        sub.current_period_end ?? item?.current_period_end ?? 0;
+    acct.tier = tierFromPrice(item?.price ?? {});
 
     await writeAccounts(accounts);
     return acct;
