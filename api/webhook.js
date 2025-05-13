@@ -28,6 +28,9 @@ export default async function handler(req, res) {
 
     const obj = event.data.object;
 
+    // — Log the full payload so you can inspect it —
+    console.warn('🔍 Full Stripe payload:', JSON.stringify(obj, null, 2));
+
     // 2) Extract username from metadata or custom_fields
     const username =
         obj.metadata?.xceusername ||
@@ -54,10 +57,19 @@ export default async function handler(req, res) {
     if (sub && username) {
         try {
             const acct = await upsertAccount({ username, sub });
+
+            // Safe formatting of expiration
+            let expiresLog = 'n/a';
+            if (
+                typeof acct.currentPeriodEnd === 'number' &&
+                isFinite(acct.currentPeriodEnd) &&
+                acct.currentPeriodEnd > 0
+            ) {
+                expiresLog = new Date(acct.currentPeriodEnd * 1000).toISOString();
+            }
+
             console.warn(
-                `🔄 Upserted ${acct.username} → tier=${acct.tier}, expires=${new Date(
-                    acct.currentPeriodEnd * 1000
-                ).toISOString()}`
+                `🔄 Upserted ${acct.username} → tier=${acct.tier}, expires=${expiresLog}`
             );
         } catch (err) {
             console.error('❌ upsertAccount error:', err);
