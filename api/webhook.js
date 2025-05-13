@@ -60,10 +60,7 @@ export default async function handler(req, res) {
             console.warn('⚠️ invoice.payment_succeeded without subscription; skipping');
         }
 
-    } else if (
-        event.type === 'customer.subscription.updated' ||
-        event.type === 'customer.subscription.deleted'
-    ) {
+    } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
         // these events already include the full Subscription object
         sub = obj;
     }
