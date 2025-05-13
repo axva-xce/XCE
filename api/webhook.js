@@ -28,10 +28,10 @@ export default async function handler(req, res) {
 
     const obj = event.data.object;
 
-    // — Log the full payload so you can inspect it —
+    // — Debug log —
     console.warn('🔍 Full Stripe payload:', JSON.stringify(obj, null, 2));
 
-    // 2) Extract username from metadata or custom_fields
+    // 2) Extract username
     const username =
         obj.metadata?.xceusername ||
         (event.type === 'checkout.session.completed'
@@ -40,41 +40,58 @@ export default async function handler(req, res) {
 
     console.warn('🆔 XCE username:', username || '<none>');
 
-    // 3) Fetch the full Subscription object when needed
+    // 3) Build a “sub” object with id, current_period_end, and items.data[0].price.id
     let sub = null;
+
     if (event.type === 'checkout.session.completed' && obj.subscription) {
+        // For a checkout session, fetch the full subscription
         sub = await stripe.subscriptions.retrieve(obj.subscription);
+
     } else if (event.type === 'invoice.payment_succeeded' && obj.subscription) {
-        sub = await stripe.subscriptions.retrieve(obj.subscription);
+        // For invoice events we can pull the period end & price straight off the invoice
+        const line = obj.lines?.data?.[0];
+        if (line && line.period && line.pricing?.price_details?.price) {
+            sub = {
+                id: obj.subscription,
+                current_period_end: line.period.end,
+                items: {
+                    data: [
+                        { price: { id: line.pricing.price_details.price } }
+                    ]
+                }
+            };
+        } else {
+            console.warn('⚠️ invoice.payment_succeeded missing line/period info');
+        }
+
     } else if (
         event.type === 'customer.subscription.updated' ||
         event.type === 'customer.subscription.deleted'
     ) {
+        // Subscription events already include the complete object
         sub = obj;
     }
 
-    // 4) Upsert only if we have both
+    // 4) Upsert if we have sub + username
     if (sub && username) {
         try {
             const acct = await upsertAccount({ username, sub });
 
-            // Safe formatting of expiration
+            // Safe expiration formatting
             let expiresLog = 'n/a';
-            if (
-                typeof acct.currentPeriodEnd === 'number' &&
-                isFinite(acct.currentPeriodEnd) &&
-                acct.currentPeriodEnd > 0
-            ) {
+            if (acct.currentPeriodEnd && Number.isFinite(acct.currentPeriodEnd)) {
                 expiresLog = new Date(acct.currentPeriodEnd * 1000).toISOString();
             }
 
             console.warn(
-                `🔄 Upserted ${acct.username} → tier=${acct.tier}, expires=${expiresLog}`
+                `🔄 Upserted ${acct.username} → tier=${acct.tier}, expiresUnix=${acct.currentPeriodEnd}, expiresISO=${new Date(acct.currentPeriodEnd * 1000).toISOString()}`
             );
+
         } catch (err) {
             console.error('❌ upsertAccount error:', err);
             return res.status(500).end();
         }
+
     } else if (sub && !username) {
         console.warn('⚠️ Skipping upsert: have subscription but no username');
     }
