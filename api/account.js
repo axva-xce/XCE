@@ -1,8 +1,9 @@
+// api/account.js
+
 import { readAccounts, writeAccounts } from './db.js';
 
 /**
- * Create the user if missing, then update the Stripe fields.
- * Returns the up-to-date account object.
+ * Create or update the account, and store when the current paid period ends.
  */
 export async function upsertAccount({ username, sub }) {
     if (!username) throw new Error('No username passed to upsertAccount');
@@ -11,22 +12,20 @@ export async function upsertAccount({ username, sub }) {
     let acct = accounts.find(a => a.username === username);
 
     if (!acct) {
-        // create a shell account with free tier & no password
+        // New user, free tier default:
         acct = {
             username,
-            passwordHash: '',              // blank means “no password yet”
-            tier: 'T1',                    // default free tier
+            passwordHash: '',       // no password yet
+            tier: 'T1',             // free tier
             stripeSubscriptionId: null,
-            currentPeriodEnd: 0,
-            status: 'free'
+            currentPeriodEnd: 0     // Unix timestamp seconds
         };
         accounts.push(acct);
     }
 
-    // update subscription-related fields
+    // Update with subscription info:
     acct.stripeSubscriptionId = sub.id;
     acct.currentPeriodEnd = sub.current_period_end;
-    acct.status = sub.status;       // e.g. active / canceled
     acct.tier = tierFromPrice(sub.items.data[0].price);
 
     await writeAccounts(accounts);
