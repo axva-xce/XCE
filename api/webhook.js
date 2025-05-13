@@ -38,25 +38,46 @@ export default async function handler(req, res) {
             : null);
     console.warn('🆔 XCE username:', username || '<none>');
 
-    // 3) If we have a subscription ID, always fetch the Subscription
+    // 3) Always end up with a full Subscription in `sub`
     let sub = null;
-    if (obj.subscription) {
+
+    if (event.type === 'checkout.session.completed') {
+        // Retrieve the session with expanded subscription
         try {
-            sub = await stripe.subscriptions.retrieve(obj.subscription);
-            console.warn('🔍 Retrieved subscription:', {
-                id: sub.id,
-                current_period_end: sub.current_period_end,
-                priceId: sub.items.data[0]?.price.id
+            const session = await stripe.checkout.sessions.retrieve(obj.id, {
+                expand: ['subscription']
             });
+            sub = session.subscription; // full Subscription object
         } catch (err) {
-            console.error('❌ Error retrieving subscription:', err.message);
+            console.error('❌ Error retrieving session/subscription:', err.message);
         }
+
+    } else if (event.type === 'invoice.payment_succeeded') {
+        // Pull subscription ID from invoice and fetch it
+        if (obj.subscription) {
+            try {
+                sub = await stripe.subscriptions.retrieve(obj.subscription);
+            } catch (err) {
+                console.error('❌ Error retrieving subscription:', err.message);
+            }
+        } else {
+            console.warn('⚠️ invoice.payment_succeeded without subscription');
+        }
+
     } else if (
         event.type === 'customer.subscription.updated' ||
         event.type === 'customer.subscription.deleted'
     ) {
-        // those payloads already *are* the subscription object
-        sub = obj;
+        sub = obj; // full Subscription payload
+    }
+
+    // Log what we got
+    if (sub) {
+        console.warn('🔍 Retrieved subscription:', {
+            id: sub.id,
+            current_period_end: sub.current_period_end,
+            priceId: sub.items?.data?.[0]?.price?.id
+        });
     }
 
     // 4) Upsert if we have both
