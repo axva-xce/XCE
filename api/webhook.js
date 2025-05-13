@@ -27,75 +27,69 @@ export default async function handler(req, res) {
     }
 
     const obj = event.data.object;
+    console.warn('🔍 Payload:', JSON.stringify(obj, null, 2));
 
-    // — Debug log —
-    console.warn('🔍 Full Stripe payload:', JSON.stringify(obj, null, 2));
-
-    // 2) Extract username
+    // 2) Grab the XCE username
     const username =
         obj.metadata?.xceusername ||
         (event.type === 'checkout.session.completed'
-            ? (obj.custom_fields || []).find(f => f.key === 'xceusername')?.text?.value
+            ? (obj.custom_fields || [])
+                .find(f => f.key === 'xceusername')
+                ?.text?.value
             : null);
-
     console.warn('🆔 XCE username:', username || '<none>');
 
-    // 3) Build a “sub” object with id, current_period_end, and items.data[0].price.id
+    // 3) Build a minimal `sub` with { id, current_period_end, items.data[0].price.id }
     let sub = null;
 
     if (event.type === 'checkout.session.completed' && obj.subscription) {
-        // For a checkout session, fetch the full subscription
-        sub = await stripe.subscriptions.retrieve(obj.subscription);
+        // fetch the full subscription so we get current_period_end
+        try {
+            sub = await stripe.subscriptions.retrieve(obj.subscription);
+        } catch (err) {
+            console.error('❌ Error retrieving subscription:', err.message);
+        }
 
-    } else if (event.type === 'invoice.payment_succeeded' && obj.subscription) {
-        // For invoice events we can pull the period end & price straight off the invoice
-        const line = obj.lines?.data?.[0];
-        if (line && line.period && line.pricing?.price_details?.price) {
+    } else if (event.type === 'invoice.payment_succeeded' && obj.lines?.data?.[0]) {
+        // use the invoice line period
+        const line = obj.lines.data[0];
+        const priceId = line.pricing?.price_details?.price;
+        if (line.period?.end && priceId) {
             sub = {
                 id: obj.subscription,
                 current_period_end: line.period.end,
-                items: {
-                    data: [
-                        { price: { id: line.pricing.price_details.price } }
-                    ]
-                }
+                items: { data: [{ price: { id: priceId } }] }
             };
         } else {
-            console.warn('⚠️ invoice.payment_succeeded missing line/period info');
+            console.warn('⚠️ Invoice missing period.end or price');
         }
 
     } else if (
         event.type === 'customer.subscription.updated' ||
         event.type === 'customer.subscription.deleted'
     ) {
-        // Subscription events already include the complete object
-        sub = obj;
+        sub = obj; // full subscription payload
     }
 
-    // 4) Upsert if we have sub + username
+    // 4) Upsert if we have both
     if (sub && username) {
         try {
+            // this will write sub.current_period_end into acct.currentPeriodEnd
             const acct = await upsertAccount({ username, sub });
 
-            // Safe expiration formatting
-            let expiresLog = 'n/a';
-            if (acct.currentPeriodEnd && Number.isFinite(acct.currentPeriodEnd)) {
-                expiresLog = new Date(acct.currentPeriodEnd * 1000).toISOString();
-            }
-
+            // log just the raw Unix timestamp
             console.warn(
-                `🔄 Upserted ${acct.username} → tier=${acct.tier}, expiresUnix=${acct.currentPeriodEnd}, expiresISO=${new Date(acct.currentPeriodEnd * 1000).toISOString()}`
+                `🔄 Upserted ${acct.username} → tier=${acct.tier}, expiresUnix=${acct.currentPeriodEnd}`
             );
-
         } catch (err) {
             console.error('❌ upsertAccount error:', err);
             return res.status(500).end();
         }
 
     } else if (sub && !username) {
-        console.warn('⚠️ Skipping upsert: have subscription but no username');
+        console.warn('⚠️ Skipping upsert: have sub but no username');
     }
 
-    // 5) Acknowledge
+    // 5) 200 OK
     res.json({ received: true });
 }
