@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         event = stripe.webhooks.constructEvent(
             buf,
             req.headers['stripe-signature'],
-            process.env.TEST_STRIPE_WEBHOOK_SECRET
+            process.env.STRIPE_WEBHOOK_SECRET
         );
         console.warn(`✅ Stripe event: ${event.type}`);
     } catch (err) {
@@ -38,49 +38,43 @@ export default async function handler(req, res) {
             : null);
     console.warn('🆔 XCE username:', username || '<none>');
 
-    // 3) Always end up with a full Subscription in `sub`
+    // 3) Find the subscription ID in the payload
+    let subscriptionId = null;
+
+    if (obj.subscription) {
+        subscriptionId = obj.subscription;
+    } else if (
+        obj.lines?.data?.[0]?.parent?.subscription_details?.subscription
+    ) {
+        subscriptionId =
+            obj.lines.data[0].parent.subscription_details.subscription;
+    }
+
+    // 4) If we have an ID, fetch the full Subscription
     let sub = null;
-
-    if (event.type === 'checkout.session.completed') {
-        // Retrieve the session with expanded subscription
+    if (subscriptionId) {
         try {
-            const session = await stripe.checkout.sessions.retrieve(obj.id, {
-                expand: ['subscription']
+            sub = await stripe.subscriptions.retrieve(subscriptionId);
+            console.warn('🔍 Retrieved subscription:', {
+                id: sub.id,
+                current_period_end: sub.current_period_end,
+                priceId: sub.items.data[0]?.price?.id,
             });
-            sub = session.subscription; // full Subscription object
         } catch (err) {
-            console.error('❌ Error retrieving session/subscription:', err.message);
+            console.error('❌ Error retrieving subscription:', err.message);
         }
-
-    } else if (event.type === 'invoice.payment_succeeded') {
-        // Pull subscription ID from invoice and fetch it
-        if (obj.subscription) {
-            try {
-                sub = await stripe.subscriptions.retrieve(obj.subscription);
-            } catch (err) {
-                console.error('❌ Error retrieving subscription:', err.message);
-            }
-        } else {
-            console.warn('⚠️ invoice.payment_succeeded without subscription');
-        }
-
     } else if (
         event.type === 'customer.subscription.updated' ||
         event.type === 'customer.subscription.deleted'
     ) {
-        sub = obj; // full Subscription payload
+        // those events *are* the Subscription object
+        sub = obj;
+        console.warn('🔍 Subscription event payload has full object');
+    } else {
+        console.warn('⚠️ No subscription ID found in payload');
     }
 
-    // Log what we got
-    if (sub) {
-        console.warn('🔍 Retrieved subscription:', {
-            id: sub.id,
-            current_period_end: sub.current_period_end,
-            priceId: sub.items?.data?.[0]?.price?.id
-        });
-    }
-
-    // 4) Upsert if we have both
+    // 5) Upsert if we have both
     if (sub && username) {
         try {
             const acct = await upsertAccount({ username, sub });
@@ -91,11 +85,10 @@ export default async function handler(req, res) {
             console.error('❌ upsertAccount error:', err);
             return res.status(500).end();
         }
-
     } else if (sub && !username) {
-        console.warn('⚠️ Skipping upsert: have sub but no username');
+        console.warn('⚠️ Skipping upsert: have subscription but no username');
     }
 
-    // 5) Acknowledge
+    // 6) Ack Stripe
     res.json({ received: true });
 }
