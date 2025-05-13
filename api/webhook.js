@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         event = stripe.webhooks.constructEvent(
             buf,
             req.headers['stripe-signature'],
-            process.env.TEST_STRIPE_WEBHOOK_SECRE
+            process.env.TEST_STRIPE_WEBHOOK_SECRET
         );
         console.warn(`✅ Stripe event: ${event.type}`);
     } catch (err) {
