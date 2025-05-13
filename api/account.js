@@ -7,6 +7,7 @@ export async function upsertAccount({ username, sub }) {
         acct = {
             username,
             passwordHash: '',
+            email: '',
             tier: 'T1',
             stripeSubscriptionId: null,
             currentPeriodEnd: 0
