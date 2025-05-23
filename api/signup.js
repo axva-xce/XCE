@@ -1,6 +1,4 @@
-// /api/signup.js
-
-import bcrypt from 'bcryptjs';        // ← use bcryptjs, not bcrypt
+import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken';
 import { readAccounts, writeAccounts } from './db';
 
@@ -9,18 +7,16 @@ export const config = {
         bodyParser: true,
     },
 };
-
 export default async function handler(req, res) {
-    console.warn(`🔍 /api/signup ${req.method} invoked`);
-
+    console.warn(`/api/signup ${req.method} invoked`);
     if (req.method === 'GET') {
-        return res.status(200).send('✅ Signup endpoint is live');
+        return res.status(200).send('Signup endpoint is live');
     }
     if (req.method !== 'POST') {
         return res.status(405).end();
     }
 
-    console.warn('📥 POST /api/signup body:', req.body);
+    console.warn('POST /api/signup body:', req.body);
 
     let username, password;
     try {
@@ -28,7 +24,7 @@ export default async function handler(req, res) {
             ? JSON.parse(req.body)
             : req.body);
     } catch (err) {
-        console.error('❌ Invalid JSON in request body', err);
+        console.error('Invalid JSON in request body', err);
         return res.status(400).json({ error: 'Invalid JSON' });
     }
 
@@ -36,7 +32,7 @@ export default async function handler(req, res) {
     try {
         accounts = await readAccounts();
     } catch (err) {
-        console.error('❌ Error reading accounts from DB', err);
+        console.error('Error reading accounts from DB', err);
         return res.status(500).json({ error: 'Database error' });
     }
 
@@ -48,7 +44,7 @@ export default async function handler(req, res) {
     try {
         passwordHash = await bcrypt.hash(password, 10);
     } catch (err) {
-        console.error('❌ Error hashing password', err);
+        console.error('Error hashing password', err);
         return res.status(500).json({ error: 'Hashing error' });
     }
 
@@ -64,7 +60,7 @@ export default async function handler(req, res) {
     try {
         await writeAccounts(accounts);
     } catch (err) {
-        console.error('❌ Error writing accounts to DB', err);
+        console.error('Error writing accounts to DB', err);
         return res.status(500).json({ error: 'Database error' });
     }
 
@@ -74,10 +70,10 @@ export default async function handler(req, res) {
             expiresIn: '1h',
         });
     } catch (err) {
-        console.error('❌ Error signing JWT', err);
+        console.error('Error signing JWT', err);
         return res.status(500).json({ error: 'Token error' });
     }
 
-    console.warn(`🎉 New user signed up: ${username}`);
+    console.warn(`New user signed up: ${username}`);
     res.status(201).json({ token });
 }

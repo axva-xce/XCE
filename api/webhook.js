@@ -1,5 +1,3 @@
-
-
 import { buffer } from 'micro';
 import Stripe from 'stripe';
 import { upsertAccount } from './account.js';
@@ -20,14 +18,14 @@ export default async function handler(req, res) {
             req.headers['stripe-signature'],
             process.env.TEST_STRIPE_WEBHOOK_SECRET
         );
-        console.warn(`✅ Stripe event: ${event.type}`);
+        console.warn(`Stripe event: ${event.type}`);
     } catch (err) {
-        console.error('❌ Webhook signature failed:', err.message);
+        console.error('Webhook signature failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     const obj = event.data.object;
-    console.warn('🔍 Payload:', JSON.stringify(obj, null, 2));
+    console.warn('Payload:', JSON.stringify(obj, null, 2));
 
     const username =
         obj.metadata?.xceusername ||
@@ -36,7 +34,7 @@ export default async function handler(req, res) {
                 .find(f => f.key === 'xceusername')
                 ?.text?.value
             : null);
-    console.warn('🆔 XCE username:', username || '<none>');
+    console.warn('XCE username:', username || '<none>');
 
     let subscriptionId = null;
     if (obj.subscription) {
@@ -49,33 +47,30 @@ export default async function handler(req, res) {
     if (subscriptionId) {
         try {
             sub = await stripe.subscriptions.retrieve(subscriptionId);
-            console.warn('🔍 Full Subscription object:', JSON.stringify(sub, null, 2));
+            console.warn('Full Subscription object:', JSON.stringify(sub, null, 2));
         } catch (err) {
-            console.error('❌ Error retrieving subscription:', err.message);
+            console.error('Error retrieving subscription:', err.message);
         }
     } else if (
         event.type === 'customer.subscription.updated' ||
         event.type === 'customer.subscription.deleted'
     ) {
         sub = obj
-        console.warn('🔍 Subscription event payload has full object:', JSON.stringify(obj, null, 2));
+        console.warn('Subscription event payload has full object:', JSON.stringify(obj, null, 2));
     } else {
-        console.warn('⚠️ No subscription ID found in payload');
+        console.warn('No subscription ID found in payload');
     }
 
     if (sub && username) {
         try {
             const acct = await upsertAccount({ username, sub });
-            console.warn(
-                `🔄 Upserted ${acct.username} → tier=${acct.tier}, expiresUnix=${acct.currentPeriodEnd}`
-            );
+            console.warn(`Upserted ${acct.username} → tier=${acct.tier}, expiresUnix=${acct.currentPeriodEnd}`);
         } catch (err) {
-            console.error('❌ upsertAccount error:', err);
+            console.error('upsertAccount error:', err);
             return res.status(500).end();
         }
     } else if (sub && !username) {
-        console.warn('⚠️ Skipping upsert: have subscription but no username');
+        console.warn('Skipping upsert: have subscription but no username');
     }
-
     res.json({ received: true });
 }
