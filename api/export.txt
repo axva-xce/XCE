@@ -1,0 +1,532 @@
+
+account.js: 
+import { readAccounts, writeAccounts } from './db.js';
+export async function upsertAccount({ username, sub }) {
+    if (!username) throw new Error('No username passed to upsertAccount');
+    const accounts = await readAccounts();
+    let acct = accounts.find(a => a.username === username);
+    if (!acct) {
+        acct = {
+            username,
+            passwordHash: '',
+            email: '',
+            tier: 'T1',
+            stripeSubscriptionId: null,
+            currentPeriodEnd: 0
+        };
+        accounts.push(acct);
+    }
+
+
+    const item = sub.items?.data?.[0];
+    acct.stripeSubscriptionId = sub.id;
+    acct.currentPeriodEnd =
+        sub.current_period_end ?? item?.current_period_end ?? 0;
+    acct.tier = tierFromPrice(item?.price ?? {});
+
+    await writeAccounts(accounts);
+    return acct;
+}
+
+function tierFromPrice(price) {
+    switch (price.id) {
+        case process.env.PRICE_ID_T2: return 'T2';
+        case process.env.PRICE_ID_T3: return 'T3';
+        default: return 'T1';
+    }
+}
+ 
+db.js: 
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+export async function readAccounts() {
+    let raw;
+    try {
+        raw = await redis.get('accounts');
+    } catch (err) {
+        if (err.message.includes('WRONGTYPE')) {
+            console.warn('accounts key wrong type—deleting and starting fresh');
+            await redis.del('accounts');
+            return [];
+        }
+        throw err;
+    }
+
+    if (raw === null) return [];
+    if (typeof raw === 'object' && Array.isArray(raw)) {
+        return raw;
+    }
+
+    if (typeof raw === 'string') {
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+            console.warn('readAccounts: JSON parsed but not an array, starting fresh');
+            return [];
+        } catch (err) {
+            console.warn('readAccounts: invalid JSON, starting fresh:', err.message);
+            return [];
+        }
+    }
+
+    console.warn('readAccounts: unexpected raw type, starting fresh');
+    return [];
+}
+
+export async function writeAccounts(accounts) {
+    await redis.set('accounts', JSON.stringify(accounts));
+} 
+export.txt: 
+
+account.js: 
+import { readAccounts, writeAccounts } from './db.js';
+export async function upsertAccount({ username, sub }) {
+    if (!username) throw new Error('No username passed to upsertAccount');
+    const accounts = await readAccounts();
+    let acct = accounts.find(a => a.username === username);
+    if (!acct) {
+        acct = {
+            username,
+            passwordHash: '',
+            email: '',
+            tier: 'T1',
+            stripeSubscriptionId: null,
+            currentPeriodEnd: 0
+        };
+        accounts.push(acct);
+    }
+
+
+    const item = sub.items?.data?.[0];
+    acct.stripeSubscriptionId = sub.id;
+    acct.currentPeriodEnd =
+        sub.current_period_end ?? item?.current_period_end ?? 0;
+    acct.tier = tierFromPrice(item?.price ?? {});
+
+    await writeAccounts(accounts);
+    return acct;
+}
+
+function tierFromPrice(price) {
+    switch (price.id) {
+        case process.env.PRICE_ID_T2: return 'T2';
+        case process.env.PRICE_ID_T3: return 'T3';
+        default: return 'T1';
+    }
+}
+ 
+db.js: 
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+export async function readAccounts() {
+    let raw;
+    try {
+        raw = await redis.get('accounts');
+    } catch (err) {
+        if (err.message.includes('WRONGTYPE')) {
+            console.warn('accounts key wrong type—deleting and starting fresh');
+            await redis.del('accounts');
+            return [];
+        }
+        throw err;
+    }
+
+    if (raw === null) return [];
+    if (typeof raw === 'object' && Array.isArray(raw)) {
+        return raw;
+    }
+
+    if (typeof raw === 'string') {
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+            console.warn('readAccounts: JSON parsed but not an array, starting fresh');
+            return [];
+        } catch (err) {
+            console.warn('readAccounts: invalid JSON, starting fresh:', err.message);
+            return [];
+        }
+    }
+
+    console.warn('readAccounts: unexpected raw type, starting fresh');
+    return [];
+}
+
+export async function writeAccounts(accounts) {
+    await redis.set('accounts', JSON.stringify(accounts));
+} 
+export.txt: 
+
+account.js: 
+import { readAccounts, writeAccounts } from './db.js';
+export async function upsertAccount({ username, sub }) {
+    if (!username) throw new Error('No userna 
+login.js: 
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { readAccounts } from './db';
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).end();
+    const { username, password } = JSON.parse(req.body);
+    const accounts = await readAccounts();
+    const acct = accounts.find(a => a.username === username);
+    if (!acct || !(await bcrypt.compare(password, acct.passwordHash))) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+}
+ 
+request-password-reset.js: 
+import { readAccounts } from './db'; // Path to your db.js
+import nodemailer from 'nodemailer';
+import { Redis } from '@upstash/redis';
+
+// --- BEGIN SENSITIVE ENV VAR CHECK & EARLY LOGGING ---
+console.log('[request-password-reset.js] Module loading...');
+
+let redisClientForCodes;
+let essentialEnvVarsOk = true;
+
+if (!process.env.UPSTASH_REDIS_REST_URL) {
+    console.error('[request-password-reset.js] FATAL ERROR: UPSTASH_REDIS_REST_URL environment variable is not set.');
+    essentialEnvVarsOk = false;
+}
+if (!process.env.UPSTASH_REDIS_REST_TOKEN) {
+    console.error('[request-password-reset.js] FATAL ERROR: UPSTASH_REDIS_REST_TOKEN environment variable is not set.');
+    essentialEnvVarsOk = false;
+}
+if (!process.env.EMAIL_USER) {
+    console.error('[request-password-reset.js] FATAL ERROR: EMAIL_USER environment variable is not set.');
+    essentialEnvVarsOk = false;
+}
+if (!process.env.EMAIL_PASS) {
+    console.error('[request-password-reset.js] FATAL ERROR: EMAIL_PASS environment variable is not set.');
+    essentialEnvVarsOk = false;
+}
+
+if (essentialEnvVarsOk) {
+    try {
+        redisClientForCodes = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        });
+        console.log('[request-password-reset.js] Redis client for codes initialized.');
+    } catch (e) {
+        console.error('[request-password-reset.js] FATAL ERROR: Could not initialize Redis client for codes.', e);
+        essentialEnvVarsOk = false; // Mark as not OK if Redis init fails
+    }
+} else {
+    console.error('[request-password-reset.js] Skipping Redis client initialization due to missing essential environment variables.');
+}
+console.log(`[request-password-reset.js] Essential Env Vars OK: ${essentialEnvVarsOk}`);
+// --- END SENSITIVE ENV VAR CHECK & EARLY LOGGING ---
+
+
+export const config = {
+    api: {
+        bodyParser: true,
+    },
+};
+
+function generateResetCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export default async function handler(req, res) {
+    // Log the very first line of handler execution
+    console.log(`[Handler] /api/request-password-reset ${req.method} invoked. Request ID: ${req.headers['x-vercel-id'] || 'N/A'}`);
+
+    // If essential environment variables were missing at module load, the function cannot operate.
+    if (!essentialEnvVarsOk || !redisClientForCodes) {
+        console.error(`[Handler] Cannot process request. Essential setup failed. essentialEnvVarsOk: ${essentialEnvVarsOk}, redisClientForCodes initialized: ${!!redisClientForCodes}`);
+        // It's possible redisClientForCodes is undefined if new Redis() threw an error too.
+        return res.status(500).json({ error: 'Server configuration error. Service unavailable.' });
+    }
+
+    if (req.method === 'GET') {
+        console.log("[Handler] GET request received. Responding with 405.");
+        return res.status(405).json({ error: 'Method Not Allowed. Please use POST.' });
+    }
+
+    if (req.method !== 'POST') {
+        console.log(`[Handler] Unsupported method ${req.method}. Responding with 405.`);
+        res.setHeader('Allow', 'POST');
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    let emailToReset;
+    try {
+        const requestBody = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        emailToReset = requestBody.email;
+
+        if (!emailToReset || typeof emailToReset !== 'string') {
+            console.warn('[Handler] Missing or invalid email in request body:', req.body);
+            return res.status(400).json({ error: 'Email is required and must be a string' });
+        }
+    } catch (err) {
+        console.error('[Handler] Invalid JSON in request body for password reset', err);
+        return res.status(400).json({ error: 'Invalid JSON' });
+    }
+
+    console.warn(`[Handler] Password reset requested for email: ${emailToReset}`);
+
+    try {
+        const accounts = await readAccounts(); // db.js also uses UPSTASH env vars
+        const accountExists = accounts.find(acc => acc.email === emailToReset);
+
+        if (accountExists) {
+            console.warn(`[Handler] Account found for email: ${emailToReset} (user: ${accountExists.username}). Initiating password reset code generation.`);
+
+            const resetCode = generateResetCode();
+            const redisKey = `password_reset_code:${emailToReset}`;
+            const expirySeconds = 15 * 60; // Code valid for 15 minutes
+
+            await redisClientForCodes.set(redisKey, resetCode, { ex: expirySeconds });
+            console.warn(`[Handler] Reset code ${resetCode} stored in Redis for ${emailToReset} with key ${redisKey}, expires in ${expirySeconds}s.`);
+
+            const transporter = nodemailer.createTransport({
+                host: 'smtp.office365.com',
+                port: 587,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL_USER, // Already checked at module load
+                    pass: process.env.EMAIL_PASS, // Already checked at module load
+                },
+                tls: {
+                    ciphers: 'SSLv3'
+                }
+            });
+
+            const mailOptions = {
+                from: `"XCE No Reply" <${process.env.EMAIL_USER}>`,
+                to: emailToReset,
+                subject: 'Your XCE Password Reset Code',
+                text: `Hello ${accountExists.username || 'User'},\n\nYour password reset code is: ${resetCode}\n\nThis code will expire in 15 minutes.\n\nIf you did not request a password reset, please ignore this email.\n\nThanks,\nThe XCE Team`,
+                html: `
+                    <p>Hello ${accountExists.username || 'User'},</p>
+                    <p>Your password reset code is: <strong>${resetCode}</strong></p>
+                    <p>This code will expire in 15 minutes.</p>
+                    <p>If you did not request a password reset, please ignore this email.</p>
+                    <p>Thanks,<br>The XCE Team</p>
+                `,
+            };
+
+            try {
+                let info = await transporter.sendMail(mailOptions);
+                console.warn(`[Handler] Password reset email sent to ${emailToReset}. Message ID: ${info.messageId}`);
+            } catch (emailError) {
+                console.error(`[Handler] Error sending password reset email to ${emailToReset}:`, emailError);
+                // Log the error, but still return generic success to client
+            }
+
+        } else {
+            console.warn(`[Handler] No account found for email: ${emailToReset}. Still returning generic success message to prevent enumeration.`);
+        }
+
+        console.log("[Handler] Processing complete. Returning generic success message.");
+        return res.status(200).json({ message: 'If an account with that email address exists, instructions to reset your password have been sent.' });
+
+    } catch (err) {
+        console.error('[Handler] Error during password reset request processing:', err.message, err);
+        // Check if the error object has properties that indicate it's from Upstash/Redis
+        const isRedisError = err.name === 'RedisError' || (err.message && err.message.toLowerCase().includes('redis')) || (err.command && typeof err.command.includes === 'function' && err.command.includes('redis'));
+        if (isRedisError) {
+            console.error('[Handler] Specific Redis error during password reset:', err);
+            return res.status(500).json({ error: 'A database error occurred while processing your request for password reset.' });
+        }
+        return res.status(500).json({ error: 'An internal server error occurred while processing your request.' });
+    }
+}
+
+console.log('[request-password-reset.js] Module finished loading.'); 
+signup.js: 
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken';
+import { readAccounts, writeAccounts } from './db';
+
+export const config = {
+    api: {
+        bodyParser: true,
+    },
+};
+export default async function handler(req, res) {
+    console.warn(`/api/signup ${req.method} invoked`);
+    if (req.method === 'GET') {
+        return res.status(200).send('Signup endpoint is live');
+    }
+    if (req.method !== 'POST') {
+        return res.status(405).end();
+    }
+
+    console.warn('POST /api/signup body:', req.body);
+
+    let username, password;
+    try {
+        ({ username, password } = typeof req.body === 'string'
+            ? JSON.parse(req.body)
+            : req.body);
+    } catch (err) {
+        console.error('Invalid JSON in request body', err);
+        return res.status(400).json({ error: 'Invalid JSON' });
+    }
+
+    let accounts;
+    try {
+        accounts = await readAccounts();
+    } catch (err) {
+        console.error('Error reading accounts from DB', err);
+        return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (accounts.find((a) => a.username === username)) {
+        return res.status(400).json({ error: 'Username taken' });
+    }
+
+    let passwordHash;
+    try {
+        passwordHash = await bcrypt.hash(password, 10);
+    } catch (err) {
+        console.error('Error hashing password', err);
+        return res.status(500).json({ error: 'Hashing error' });
+    }
+
+    const newAccount = {
+        username,
+        passwordHash,
+        stripeSubscriptionId: null,
+        currentPeriodEnd: 0,
+        status: 'free',
+    };
+    accounts.push(newAccount);
+
+    try {
+        await writeAccounts(accounts);
+    } catch (err) {
+        console.error('Error writing accounts to DB', err);
+        return res.status(500).json({ error: 'Database error' });
+    }
+
+    let token;
+    try {
+        token = jwt.sign({ username }, process.env.JWT_SECRET, {
+            expiresIn: '1h',
+        });
+    } catch (err) {
+        console.error('Error signing JWT', err);
+        return res.status(500).json({ error: 'Token error' });
+    }
+
+    console.warn(`New user signed up: ${username}`);
+    res.status(201).json({ token });
+}
+ 
+subscription-status.js: 
+import jwt from 'jsonwebtoken';
+import { readAccounts } from './db';
+
+export default async function handler(req, res) {
+    const auth = req.headers.authorization?.split(' ')[1];
+    if (!auth) return res.status(401).end();
+    let payload;
+    try { payload = jwt.verify(auth, process.env.JWT_SECRET); }
+    catch { return res.status(401).end(); }
+    const accounts = await readAccounts();
+    const acct = accounts.find(a => a.username === payload.username);
+    if (!acct) return res.status(404).end();
+    res.json({
+        status: acct.status,
+        current_period_end: acct.currentPeriodEnd,
+        server_time: Math.floor(Date.now() / 1000)
+    });
+}
+ 
+webhook.js: 
+import { buffer } from 'micro';
+import Stripe from 'stripe';
+import { upsertAccount } from './account.js';
+
+export const config = { api: { bodyParser: false } };
+const stripe = new Stripe(process.env.TEST_STRIPE_SECRET_KEY);
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        res.setHeader('Allow', 'POST');
+        return res.status(405).end('Method Not Allowed');
+    }
+    let event;
+    try {
+        const buf = await buffer(req);
+        event = stripe.webhooks.constructEvent(
+            buf,
+            req.headers['stripe-signature'],
+            process.env.TEST_STRIPE_WEBHOOK_SECRET
+        );
+        console.warn(`Stripe event: ${event.type}`);
+    } catch (err) {
+        console.error('Webhook signature failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    const obj = event.data.object;
+    console.warn('Payload:', JSON.stringify(obj, null, 2));
+
+    const username =
+        obj.metadata?.xceusername ||
+        (event.type === 'checkout.session.completed'
+            ? (obj.custom_fields || [])
+                .find(f => f.key === 'xceusername')
+                ?.text?.value
+            : null);
+    console.warn('XCE username:', username || '<none>');
+
+    let subscriptionId = null;
+    if (obj.subscription) {
+        subscriptionId = obj.subscription;
+    } else if (obj.lines?.data?.[0]?.parent?.subscription_details?.subscription) {
+        subscriptionId = obj.lines.data[0].parent.subscription_details.subscription;
+    }
+
+    let sub = null;
+    if (subscriptionId) {
+        try {
+            sub = await stripe.subscriptions.retrieve(subscriptionId);
+            console.warn('Full Subscription object:', JSON.stringify(sub, null, 2));
+        } catch (err) {
+            console.error('Error retrieving subscription:', err.message);
+        }
+    } else if (
+        event.type === 'customer.subscription.updated' ||
+        event.type === 'customer.subscription.deleted'
+    ) {
+        sub = obj
+        console.warn('Subscription event payload has full object:', JSON.stringify(obj, null, 2));
+    } else {
+        console.warn('No subscription ID found in payload');
+    }
+
+    if (sub && username) {
+        try {
+            const acct = await upsertAccount({ username, sub });
+            console.warn(`Upserted ${acct.username} → tier=${acct.tier}, expiresUnix=${acct.currentPeriodEnd}`);
+        } catch (err) {
+            console.error('upsertAccount error:', err);
+            return res.status(500).end();
+        }
+    } else if (sub && !username) {
+        console.warn('Skipping upsert: have subscription but no username');
+    }
+    res.json({ received: true });
+}
+ 

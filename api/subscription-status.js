@@ -1,18 +1,1 @@
-import jwt from 'jsonwebtoken';
-import { readAccounts } from './db';
-
-export default async function handler(req, res) {
-    const auth = req.headers.authorization?.split(' ')[1];
-    if (!auth) return res.status(401).end();
-    let payload;
-    try { payload = jwt.verify(auth, process.env.JWT_SECRET); }
-    catch { return res.status(401).end(); }
-    const accounts = await readAccounts();
-    const acct = accounts.find(a => a.username === payload.username);
-    if (!acct) return res.status(404).end();
-    res.json({
-        status: acct.status,
-        current_period_end: acct.currentPeriodEnd,
-        server_time: Math.floor(Date.now() / 1000)
-    });
-}
+import jwt from 'jsonwebtoken'; import { readAccount } from './db'; export default async function handler(req, res) { const authHeader = req.headers.authorization; if (!authHeader || !authHeader.startsWith('Bearer ')) { return res.status(401).json({ error: 'Authorization header missing or invalid' }) } const token = authHeader.split(' ')[1]; if (!token) { return res.status(401).json({ error: 'Token missing' }) } let payload; try { payload = jwt.verify(token, process.env.JWT_SECRET) } catch (err) { return res.status(401).json({ error: 'Invalid or expired token' }) } const acct = await readAccount(payload.username); if (!acct) { return res.status(404).json({ error: 'Account not found' }) } res.json({ status: acct.status, tier: acct.tier, current_period_end: acct.currentPeriodEnd, server_time: Math.floor(Date.now() / 1000) }) }
